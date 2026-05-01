@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cells"
+version = "0.0"
+description = "Integer buffers of NAND strings evaluating searches over a graph"
+requires-python = ">=3.13"
+dependencies = [
+]
+
+[project.optional-dependencies]
+test = [
+]
+
+[project.scripts]
+runcells = "src.run:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]
