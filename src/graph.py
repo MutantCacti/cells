@@ -53,7 +53,7 @@ class Cell:
 
 
 
-class Space:
+class Graph:
     def __init__(self, size: int, rng: random.Random):
         self.rng = rng
         self.cells: list[Cell] = [
@@ -67,7 +67,7 @@ class Space:
         self.next_indices: set[int] = set(range(size))
 
 
-    def update(self) -> 'Space':
+    def update(self) -> 'Graph':
         # Collect activations from all cells over their converging inputs
         active = sorted(self.next_indices)
         activations = [self.cells[i].activate(self.cells) for i in active]

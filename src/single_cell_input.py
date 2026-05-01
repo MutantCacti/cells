@@ -1,24 +1,24 @@
 """
 src/single_cell_input.py
-Input to a space via a specific cell index.
+Input to a graph via a specific cell index.
 
 Created: 2025-06-01
  Author: Maxence Morel Dierckx
 """
-from space import Space
+from graph import Graph
 
 
 from pynput import keyboard
 
 
 class SingleCellInput:
-    def __init__(self, space: Space, cell_index: int):
-        self.space = space
+    def __init__(self, graph: Graph, cell_index: int):
+        self.graph = graph
         self.cell_index = cell_index
 
 
     def __repr__(self):
-        return self.space.cells[self.cell_index].value
+        return self.graph.cells[self.cell_index].value
 
 
     # Override
@@ -27,14 +27,14 @@ class SingleCellInput:
 
 
     def write(self):
-        self.space.cells[self.cell_index].value = self.read()
+        self.graph.cells[self.cell_index].value = self.read()
 
 
 
 
 class KeyInput(SingleCellInput):
-    def __init__(self, space, cell_index):
-        super().__init__(space, cell_index)
+    def __init__(self, graph, cell_index):
+        super().__init__(graph, cell_index)
         self.pressed = False
         self.listener = keyboard.Listener(
             on_press=self.on_key_down,
