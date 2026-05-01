@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "cells"
 version = "0.0"
-description = "Integer buffers of NAND strings evaluating searches over a graph"
+description = "Unsupervised int64-valued transformers form a self-predicting autoencoder"
 requires-python = ">=3.13"
 dependencies = [
 ]
