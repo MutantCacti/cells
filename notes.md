@@ -43,3 +43,70 @@ PoC extension:
 
 - Compilation to post-order schedules of trees for tensor acceleration ~N times speedup
 - Context division error
+
+---
+
+```py
+cells/src main ? ❯ python
+Python 3.14.4 (main, Apr  8 2026, 17:48:49) [GCC 15.2.1 20260209] on linux
+Type "help", "copyright", "credits" or "license" for more information.
+>>> from space import Space
+>>> import random
+>>> rng = random.Random()
+>>> s = Space(8, rng)
+>>> s
+<space.Space object at 0x7fddea859160>
+>>> print(s.cells)
+[<space.Cell object at 0x7fddea858ad0>, <space.Cell object at 0x7fddea9b6ad0>, <space.Cell object at 0x7fddea9b6490>, <space.Cell object at 0x7fddea87c180>, <space.Cell object at 0x7fddea87c640>, <space.Cell object at 0x7fddeaab2c30>, <space.Cell object at 0x7fddea812360>, <space.Cell object at 0x7fddea812470>]
+>>> for cell in s.cells:
+...     print(cell.value)
+...     
+13056112310781561994
+8406672687597636777
+18052626968141575383
+8397496338371894957
+17593712058340741861
+6798217040340226453
+2399385779092594927
+3144335035618740979
+>>> s.update()
+<space.Space object at 0x7fddea859160>
+>>> for cell in s.cells:
+...     print(cell.value)
+...     
+-3756143104935873673
+-8107183036072985730
+-8106971929837311110
+-8361322367129490086
+-6055101106456367238
+-20288330582196358
+-2377975396094181604
+-2387083759340767363
+>>> s.update()
+<space.Space object at 0x7fddea859160>
+>>> for cell in s.cells:
+...     print(cell.value)
+...     
+8404420887515516041
+8107534879793878149
+8397491901670626981
+8361331163224609445
+6073137499762856069
+2398259328356188391
+2387158552173889763
+3828235918250888330
+>>> s.update()
+<space.Space object at 0x7fddea859160>
+>>> for cell in s.cells:
+...     print(cell.value)
+...     
+-8107183036072985730
+-8106971929837311110
+-8361322367129490086
+-6055101106456367238
+-20288330582196358
+-2377975396094181604
+-2387083759340767363
+-3756143104935873673
+>>>
+```

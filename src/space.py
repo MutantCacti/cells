@@ -21,6 +21,8 @@ class Cell:
         self.converge: Tree = converge   # leaves are upstream cell indices
         self.diverge: Tree = diverge     # leaves are downstream cell indices
         self.value: int = value
+        self.cardinality: int = 0
+
 
     # TODO: compile to post-order tensor schedule for ~size speedup
     def activate(self, cells: list['Cell']) -> int:
@@ -31,6 +33,7 @@ class Cell:
             left, right = tree
             return ~(nand(left) & nand(right))
         return nand(self.converge)
+
 
     # TODO: compile to post-order tensor schedule for ~size speedup
     def route(self, rng: random.Random) -> list[int]:
@@ -48,7 +51,9 @@ class Cell:
         return distribute(self.diverge, self.value, [], rng)
 
 
-class Graph:
+
+
+class Space:
     def __init__(self, size: int, rng: random.Random):
         self.rng = rng
         self.cells: list[Cell] = [
@@ -61,7 +66,8 @@ class Graph:
         ]
         self.next_indices: set[int] = set(range(size))
 
-    def update(self) -> 'Graph':
+
+    def update(self) -> 'Space':
         # Collect activations from all cells over their converging inputs
         active = sorted(self.next_indices)
         activations = [self.cells[i].activate(self.cells) for i in active]
