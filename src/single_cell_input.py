@@ -5,7 +5,7 @@ Input to a graph via a specific cell index.
 Created: 2025-06-01
  Author: Maxence Morel Dierckx
 """
-from graph import Graph
+from cells import Graph
 
 
 from pynput import keyboard

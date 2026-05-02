@@ -110,3 +110,21 @@ Type "help", "copyright", "credits" or "license" for more information.
 -3756143104935873673
 >>>
 ```
+
+---
+
+Candidates:
+- Activation timeout: ticks since last value change. If activate() returns the
+same bits N times, retire.
+- Routing timeout: ticks since next_indices contained i. If nothing
+routes to it, it's unreachable.
+
+predicted_timeout ideas:
+- cc = converge cardinality
+- dc = diverge cardinality
+- cc + dc
+- max (cc, dc)
+- cc * dc
+- cc ** dc
+- dc ** cc
+- various complexity classes

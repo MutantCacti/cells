@@ -9,13 +9,13 @@ import sys
 import time
 import signal
 import random
-from graph import Graph, DATA_WIDTH
+from cells import Graph, DATA_WIDTH
 from single_cell_input import KeyInput
 
 
-SAMPLE_RATE = 12 # Hz
-CHAR_ONE = '█'
-CHAR_ZERO = '░'
+SAMPLE_RATE = 60 # Hz
+CHAR_ONE = '█'#'1'
+CHAR_ZERO = '░'#'0'
 
 
 def stop(signum, frame):
@@ -33,8 +33,8 @@ def main():
         while True:
             key_down.write()
             graph.update()
-            # last = '\n'.join([str(cell.value) for cell in graph.cells])
-            # last = ''.join('█' if c.value == -1 else '·' for c in graph.cells)
+            #last = '\n'.join([str(cell.value) for cell in graph.cells])
+            #last = ''.join('█' if c.value == -1 else '·' for c in graph.cells)
             last = '\n'.join(''.join(CHAR_ONE if c.value & (1<<b) else CHAR_ZERO for b in range(DATA_WIDTH - 1, -1, -1)) for c in graph.cells)
             sys.stdout.write('\033[H' + last)
             sys.stdout.flush()

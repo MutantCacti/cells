@@ -21,7 +21,6 @@ class Cell:
         self.converge: Tree = converge   # leaves are upstream cell indices
         self.diverge: Tree = diverge     # leaves are downstream cell indices
         self.value: int = value
-        self.cardinality: int = 0
 
 
     # TODO: compile to post-order tensor schedule for ~size speedup
