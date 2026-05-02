@@ -11,7 +11,7 @@ from cells import Graph
 from pynput import keyboard
 
 
-class SingleCellInput:
+class CellInput:
     def __init__(self, graph: Graph, cell_index: int):
         self.graph = graph
         self.cell_index = cell_index
@@ -32,7 +32,7 @@ class SingleCellInput:
 
 
 
-class KeyInput(SingleCellInput):
+class KeyInput(CellInput):
     def __init__(self, graph, cell_index):
         super().__init__(graph, cell_index)
         self.pressed = False
@@ -43,11 +43,11 @@ class KeyInput(SingleCellInput):
         self.listener.start()
 
 
-    def on_key_down(self):
+    def on_key_down(self, key):
         self.pressed = True
 
 
-    def on_key_up(self):
+    def on_key_up(self, key):
         self.pressed = False
 
 
