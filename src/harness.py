@@ -73,6 +73,20 @@ class SwitchHarness(Harness):
 
     def log(self) -> str:
         switched_on = self.graph.cells[self.output_index].value >= 0
+        rendered_text = self.render_text(switched_on)
+
+        tick_input = self.input.read()
+        self.log_file.write(','.join([
+            str(self.tick),
+            str(tick_input),
+            '1' if switched_on else '0',
+            '1' if tick_input == switched_on else '0'
+        ]) + '\n')
+
+        return rendered_text
+
+
+    def render_text(self, switched_on) -> str:
         table = '\n'.join(
             ''.join(
                 '█' if cell.value & (1 << b) else '░' for b in range(DATA_WIDTH - 1, -1, -1)
@@ -86,15 +100,7 @@ class SwitchHarness(Harness):
         sys.stdout.write('\033[H' + output)
         sys.stdout.flush()
 
-        tick_input = self.input.read()
-        self.log_file.write(','.join([
-            str(self.tick),
-            str(tick_input),
-            '1' if switched_on else '0',
-            '1' if tick_input == switched_on else '0'
-        ]) + '\n')
-
-        return table + switch + key_space
+        return output
 
 
     def mutate(self):

@@ -7,6 +7,7 @@ Created: 2026-05-01
  Author: Maxence Morel Dierckx
 """
 import random
+from collections import defaultdict
 
 
 DATA_WIDTH = 64 # torch.int64
@@ -18,8 +19,8 @@ type Tree = int | tuple[Tree, Tree]
 
 class Cell:
     def __init__(self, converge: Tree, diverge: Tree, value: int = 0):
-        self.converge: Tree = converge   # leaves are upstream cell indices
-        self.diverge: Tree = diverge     # leaves are downstream cell indices
+        self.converge: Tree = converge  # leaves are upstream cell indices
+        self.diverge: Tree = diverge    # leaves are downstream cell indices
         self.value: int = value
 
 
@@ -28,7 +29,9 @@ class Cell:
         """Converge by NAND folding upstream cell values into a new value"""
         def nand(tree: Tree) -> int:
             if isinstance(tree, int):
-                return cells[tree].value
+                value = cells[abs(tree) - 1].value
+                # Negative indices are "inhibited" by bitwise NOT
+                return ~value if tree < 0 else value
             left, right = tree
             return ~(nand(left) & nand(right))
         return nand(self.converge)
@@ -57,8 +60,8 @@ class Graph:
         self.rng = rng
         self.cells: list[Cell] = [
             Cell(
-                converge=(i, (i + 1) % size),
-                diverge=(i, (i + 1) % size),
+                converge=(i + 1, (i + 2) % size),
+                diverge=(i + 1, (i + 2) % size),
                 value=rng.getrandbits(DATA_WIDTH),
             )
             for i in range(size)
@@ -76,9 +79,11 @@ class Graph:
             self.cells[i].value = value
 
         # Collect cell divergence routing data based on new value for next update
-        new_next_indices: set[int] = set()
+        # Negatively signed indices correspond to inhibitory signals;
+        # signal is tallied across cells, only cells >0 are active next update
+        tally: dict[int, int] = defaultdict(int)
         for i in active:
-            new_next_indices.update(self.cells[i].route(self.rng))
-        self.next_indices = new_next_indices
-
+            for signed in self.cells[i].route(self.rng):
+                tally[abs(signed) - 1] += 1 if signed > 0 else -1 # strictly GT; excitation has to win
+        self.next_indices = {k for k, v in tally.items() if v > 0} # +1 offset 
         return self
