@@ -46,15 +46,51 @@ We think of it as a distribution, because the structure will dictate where chanc
 
 Holds an array of cells and routes them.
 
-`Graph` holds a set of indices to the next cells to update. Its main function is `Graph.update()`, which runs the convergence schedule to update cell.value l, then parsing the divergence schedule for `next_indices`.
+`Graph` holds a set of indices to the next cells to update. Its main function is `Graph.update()`, which runs the convergence schedule to update cell.values, then parses the divergence schedule for `next_indices`.
+
+## sample
+
+```py
+class Sample:
+    def __init__(self, start: float y_pred: float, prev_y: float, index: int):
+    self.time = time.perf_counter()
+    self.duration = self.index # literally nanoseconds
+    ...
+    def sample(self):
+        return ( time.perf_counter() - self.time ) > self.duration
+```
+
+A sample is effectively a timer and measures whether error has improved over a short window when it is compared to a CellInput.
 
 ## cellinput
 
-CellInput base class for writing to arbitrary indices. Example: `SwitchHarness` which accepts any key as a non-blocking active signal.
+CellInput base class for writing to arbitrary indices. Example: 
+
+`KeyInput` which accepts any key as a non-blocking signal.
+
+It writes, for example, to index i of n cells.
+
+## evolver
+
+An `Evolver` holds a number of Samples written by cells. Because each sample has an index, it can find y_pred and pred_y for a specific cell value and compare how the prediction has changed.
+
+We call predicted difference in error the change in error, or innovation of a cell.
+
+We compare it to a measured value from the input. Note that the Sample never saves the past input; instead, the cell is expected to have predicted what we are reading now, which it did not know then.
 
 ## harness
 
-## evolver
+A `Harness` holds a Graph, a CellInput and an Evolver.
+
+It, updates the graph, retrieving cell values,
+
+Then reads the input, sampling reality,
+
+And updates the evolver.
+
+These correspond to Fetch, Decode, Execute and are the CPU cycle of the logical stream.
+
+
 
 ## main
 
