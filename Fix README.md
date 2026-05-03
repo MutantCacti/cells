@@ -72,9 +72,9 @@ It writes, for example, to index i of n cells.
 
 ## evolver
 
-An `Evolver` holds a number of Samples written by cells. Because each sample has an index, it can find y_pred and pred_y for a specific cell value and compare how the prediction has changed.
+An `Evolver` holds a number of Samples written by cells. Because each sample has an index, it can find y_pred and prev_y for a specific cell value and compare how the prediction has changed.
 
-We call predicted difference in error the change in error, or innovation of a cell.
+We call predicted difference in error, or change in error the *innovation* of a cell.
 
 We compare it to a measured value from the input. Note that the Sample never saves the past input; instead, the cell is expected to have predicted what we are reading now, which it did not know then.
 
