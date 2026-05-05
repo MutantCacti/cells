@@ -17,15 +17,24 @@ DATA_WIDTH = 64 # torch.int64
 type Tree = int | tuple[Tree, Tree]
 
 
+def count_leaves(tree: Tree) -> int:
+    if isinstance(tree, int):
+        return 1
+    left, right = tree
+    return count_leaves(left) + count_leaves(right)
+
+
+
+
 class Cell:
     def __init__(self, converge: Tree, diverge: Tree, value: int = 0):
-        self.converge: Tree = converge  # leaves are upstream cell indices
-        self.diverge: Tree = diverge    # leaves are downstream cell indices
+        self.C: Tree = converge  # leaves are upstream cell indices
+        self.D: Tree = diverge    # leaves are downstream cell indices
         self.value: int = value
 
 
     # TODO: compile to post-order tensor schedule for ~size speedup
-    def activate(self, cells: list['Cell']) -> int:
+    def converge(self, cells: list['Cell']) -> int:
         """Converge by NAND folding upstream cell values into a new value"""
         def nand(tree: Tree) -> int:
             if isinstance(tree, int):
@@ -34,23 +43,41 @@ class Cell:
                 return ~value if tree < 0 else value
             left, right = tree
             return ~(nand(left) & nand(right))
-        return nand(self.converge)
+        return nand(self.C)
 
 
     # TODO: compile to post-order tensor schedule for ~size speedup
-    def route(self, rng: random.Random) -> list[int]:
+    def diverge(self, rng: random.Random) -> list[int]:
         """Diverge by bit pachinko on self.value through tree to target cell indices"""
-        def distribute(tree: Tree, signal: int, targets: list[int], rng: random.Random) -> list[int]:
+        def distribute(signal: int, tree: Tree, targets: list[int], rng: random.Random) -> list[int]:
             if signal == 0:
                 return targets
             if isinstance(tree, int):
                 return targets + [tree]
             left, right = tree
             mask = rng.getrandbits(DATA_WIDTH)
-            targets = distribute(left,  signal & mask,  targets, rng)
-            targets = distribute(right, signal & ~mask, targets, rng)
+            targets = distribute(signal & mask,  left,  targets, rng)
+            targets = distribute(signal & ~mask, right, targets, rng)
             return targets
-        return distribute(self.diverge, self.value, [], rng)
+        return distribute(self.value, self.D, [], rng)
+
+
+    def replace_C(self, tree: Tree):
+        self.C = tree
+
+
+    def replace_D(self, tree: Tree):
+        self.D = tree
+
+
+    @property
+    def Cc(self) -> int:
+        return count_leaves(self.C)
+
+
+    @property
+    def Dc(self) -> int:
+        return count_leaves(self.D)
 
 
 
@@ -60,8 +87,8 @@ class Graph:
         self.rng = rng
         self.cells: list[Cell] = [
             Cell(
-                converge=(i + 1, (i + 2) % size),
-                diverge=(i + 1, (i + 2) % size),
+                converge=(i + 1, (i % size) + 1),
+                diverge=(i + 1, (i % size) + 1),
                 value=rng.getrandbits(DATA_WIDTH),
             )
             for i in range(size)
@@ -72,7 +99,7 @@ class Graph:
     def update(self) -> 'Graph':
         # Collect activations from all cells over their converging inputs
         active = sorted(self.next_indices)
-        activations = [self.cells[i].activate(self.cells) for i in active]
+        activations = [self.cells[i].converge(self.cells) for i in active]
 
         # Write snapshots back to cells (simultaneous displacement)
         for i, value in zip(active, activations):
@@ -83,7 +110,7 @@ class Graph:
         # signal is tallied across cells, only cells >0 are active next update
         tally: dict[int, int] = defaultdict(int)
         for i in active:
-            for signed in self.cells[i].route(self.rng):
+            for signed in self.cells[i].diverge(self.rng):
                 tally[abs(signed) - 1] += 1 if signed > 0 else -1 # strictly GT; excitation has to win
         self.next_indices = {k for k, v in tally.items() if v > 0} # +1 offset 
         return self

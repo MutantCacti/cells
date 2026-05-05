@@ -1,2 +1,2 @@
 #!/bin/sh
-exec python "$(dirname "$0")/src/__main__.py" "$@"
+exec .venv/bin/python "$(dirname "$0")/src/main.py" "$@"

@@ -158,3 +158,41 @@ cells main ? ❯ ./run
 
 ---
 
+Evolver needs a per-cell error signal, we want to avoid per-cell memory.
+
+Credit assignment (via context division):
+- Welford's online algorithm for variance
+    - `n, M, S` --- streaming mean and variance as three scalars (no memory!!)
+    - mean stabilises after long durations (never forgets)
+    - building block for composition
+- Exponential Moving Average (EMA)
+    - `EMA = ALPHA * new_reading + (1 - ALPHA) * last_EMA` where `alpha ∈ (0, 1]` is a smoothing factor (hyperparam, darn !!!)
+    - think about repeated applications: EMA from n ticks ago is weighted `ALPHA * (1 - ALPHA)^n`
+    - this average forgets and never stabilises
+- Buddy-of-two context division
+    - Error-channel order based on sample duration
+    - Order k updates every 2^k ticks with the **previous order's current value**.
+    - composes Welford or EMA somehow
+        - Welford: total state log(N) * 3 scalars (Welford estimates) in evolver ?
+        - EMA: also O(log(N)), it's just per-channel EMA + last_EMA and the ALPHA constant
+    - cells read from order floor(log2(T)) - 1 where T is sample duration
+    - smooths error for cell timeout durations; frequently-sampled cells see noisy error, patient cells see a trend
+    - delivers per-order differentiation
+    - useful when the task requires variable-horizon error signals
+
+Q: Does context division differentiate per-cell error signal without per-cell state?
+
+Extension: add per-cell state in the same vein; this likely looks like refactoring graph as a queue of cell activations that have their own timeouts (like samples) determined by... something
+
+Extension 2: per-cell confusion matrix EMAs to the per-cell state
+
+---
+
+Confusion Matrix
+- Let's imagine sample duration is cc*dc delay (what if cell.value is signed for the cell predicting it will fire or not fire?)
+- Ground truth is whether error improved over that cc*dc delay
+    - Fired + Error fell,         Fired + Error rose,
+    - Didn't fire + Error fell,   Didn't fire + Error rose
+- As in a confusion matrix. Then we can get precision and recall;
+- Low precision means the cell is often wrong; it should fire less often (cc or dc should increase)
+- Low recall means the cell is right but not firing enough; it should fire more often (cc or dc should decrease)

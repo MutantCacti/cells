@@ -1,17 +1,17 @@
 """
-src/__main__.py
-Temporary entry point.
+src/main.py
+Entry point.
 
 Created: 2026-05-01
  Author: Maxence Morel Dierckx
 """
 import sys
-import time
 import signal
 import random
 from cells import Graph, DATA_WIDTH
-from cell_input import KeyInput
+from cellinput import KeyInput
 from harness import SwitchHarness
+from evolver import SwitchEvolver
 
 
 NUM_CELLS = 16
@@ -27,8 +27,9 @@ def stop(signum, frame):
 def main():
     rng = random.Random(42)
     graph = Graph(NUM_CELLS, rng)
+    evolver = SwitchEvolver(graph, rng)
     key_down = KeyInput(graph, 0)
-    harness = SwitchHarness(graph, key_down, NUM_CELLS - 1, "switch", SAMPLE_RATE)
+    harness = SwitchHarness(graph, evolver, key_down, NUM_CELLS - 1, "switch", SAMPLE_RATE)
     harness.run()
 
 
