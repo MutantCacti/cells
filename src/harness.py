@@ -84,7 +84,7 @@ class SwitchHarness(Harness):
 
     def current_error(self) -> float:
         real_switch = self.input.read()
-        pred_switch = -1 if self.graph_switched() else 0 # Mirrors cellinput:KeyInput:read()
+        pred_switch = 1 if self.graph_switched() else 0 # Mirrors cellinput:KeyInput:read()
         return abs(pred_switch - real_switch)
 
 

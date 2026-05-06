@@ -8,17 +8,22 @@ Created: 2026-05-01
 """
 import random
 from collections import defaultdict
+from typing import NamedTuple
 
 
 DATA_WIDTH = 64 # torch.int64
 
 
 # Everything is a tree
-type Tree = int | tuple[Tree, Tree]
+class Leaf(NamedTuple):
+    index: int       # signed cell 1-index (negative means inhibitory)
+    ema: float = float('nan')
+type Tree = Leaf | tuple[Tree, Tree]
+type Mask = bool | tuple[Mask, Mask] # used to track tree traversals
 
 
 def count_leaves(tree: Tree) -> int:
-    if isinstance(tree, int):
+    if isinstance(tree, Leaf):
         return 1
     left, right = tree
     return count_leaves(left) + count_leaves(right)
@@ -28,39 +33,9 @@ def count_leaves(tree: Tree) -> int:
 
 class Cell:
     def __init__(self, converge: Tree, diverge: Tree, value: int = 0):
-        self.C: Tree = converge  # leaves are upstream cell indices
-        self.D: Tree = diverge    # leaves are downstream cell indices
+        self.C: Tree = converge     # leaves are upstream cell indices
+        self.D: Tree = diverge      # leaves are downstream cell indices
         self.value: int = value
-
-
-    # TODO: compile to post-order tensor schedule for ~size speedup
-    def converge(self, cells: list['Cell']) -> int:
-        """Converge by NAND folding upstream cell values into a new value"""
-        def nand(tree: Tree) -> int:
-            if isinstance(tree, int):
-                value = cells[abs(tree) - 1].value
-                # Negative indices are "inhibited" by bitwise NOT
-                return ~value if tree < 0 else value
-            left, right = tree
-            return ~(nand(left) & nand(right))
-        return nand(self.C)
-
-
-    # TODO: compile to post-order tensor schedule for ~size speedup
-    def diverge(self, rng: random.Random) -> list[int]:
-        """Diverge by bit pachinko on self.value through tree to target cell indices"""
-        def distribute(signal: int, tree: Tree, targets: list[int], rng: random.Random) -> list[int]:
-            if signal == 0:
-                return targets
-            if isinstance(tree, int):
-                return targets + [tree]
-            left, right = tree
-            mask = rng.getrandbits(DATA_WIDTH)
-            targets = distribute(signal & mask,  left,  targets, rng)
-            targets = distribute(signal & ~mask, right, targets, rng)
-            return targets
-        return distribute(self.value, self.D, [], rng)
-
 
     def replace_C(self, tree: Tree):
         self.C = tree
@@ -80,20 +55,51 @@ class Cell:
         return count_leaves(self.D)
 
 
+    # TODO: compile to post-order tensor schedule for ~size speedup
+    def converge(self, cells: list['Cell']) -> int:
+        """Converge by NAND folding upstream cell values into a new value"""
+        def nand(tree: Tree) -> int:
+            if isinstance(tree, Leaf):
+                value = cells[abs(tree.index) - 1].value
+                # Negative indices are inhibited by bitwise NOT
+                return ~value if tree.index < 0 else value
+            left, right = tree
+            return ~(nand(left) & nand(right))
+        return nand(self.C)
+
+
+    # TODO: compile to post-order tensor schedule for ~size speedup
+    def diverge(self, rng: random.Random) -> Mask:
+        """Diverge by bit pachinko on self.value through tree to target mask"""
+        def distribute(signal: int, tree: Tree, rng: random.Random) -> Mask:
+            if signal == 0:
+                return False
+            if isinstance(tree, Leaf):
+                return True
+            left, right = tree
+            pivot = rng.getrandbits(DATA_WIDTH)
+            return (distribute(signal & pivot,  left,  rng),
+                    distribute(signal & ~pivot, right, rng))
+        return distribute(self.value, self.D, rng)
+
+
+
 
 
 class Graph:
     def __init__(self, size: int, rng: random.Random):
+        self.size = size
         self.rng = rng
         self.cells: list[Cell] = [
             Cell(
-                converge=(i + 1, (i % size) + 1),
-                diverge=(i + 1, (i % size) + 1),
+                converge=(Leaf(i + 1), Leaf(((i + 1) % size) + 1)),
+                diverge=(Leaf(i + 1), Leaf(((i + 1) % size) + 1)),
                 value=rng.getrandbits(DATA_WIDTH),
             )
             for i in range(size)
         ]
         self.next_indices: set[int] = set(range(size))
+        self.masks: dict[int, Mask] = {i: False for i in range(size)}
 
 
     def update(self) -> 'Graph':
@@ -108,9 +114,27 @@ class Graph:
         # Collect cell divergence routing data based on new value for next update
         # Negatively signed indices correspond to inhibitory signals;
         # signal is tallied across cells, only cells >0 are active next update
+        self.masks: dict[int, Mask] = {}
         tally: dict[int, int] = defaultdict(int)
+
+        def update_tally(tree: Tree, mask: Mask):
+            if mask is False:
+                return
+            if isinstance(tree, Leaf):
+                i = tree.index
+                tally[(i if i > 0 else -i) - 1] += 1 if i > 0 else -1 # index strictly GT; excitation has to win
+            else:
+                left_tree, right_tree = tree
+                left_mask, right_mask = mask
+                update_tally(left_tree, left_mask)
+                update_tally(right_tree, right_mask)
+
+
         for i in active:
-            for signed in self.cells[i].diverge(self.rng):
-                tally[abs(signed) - 1] += 1 if signed > 0 else -1 # strictly GT; excitation has to win
-        self.next_indices = {k for k, v in tally.items() if v > 0} # +1 offset 
+            cell = self.cells[i]
+            mask: Mask = cell.diverge(self.rng)
+            update_tally(cell.D, mask)
+            self.masks[i] = mask
+
+        self.next_indices = {k for k, v in tally.items() if v > 0} # +1 offset
         return self

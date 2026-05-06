@@ -52,4 +52,4 @@ class KeyInput(CellInput):
 
 
     def read(self) -> int:
-        return -1 if self.pressed else 0
+        return 1 if self.pressed else 0

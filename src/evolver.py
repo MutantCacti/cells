@@ -8,7 +8,7 @@ Created: 2026-05-02
 import sys
 import random
 from collections import deque
-from cells import Tree, Cell, Graph
+from cells import Tree, Leaf, Cell, Graph
 
 
 PRECISION = 1e-9
@@ -103,11 +103,11 @@ class SwitchEvolver(Evolver):
 
 
     def swap_random_leaf(self, tree: Tree, num_cells: int):
-        if isinstance(tree, int):
+        if isinstance(tree, Leaf):
             sign = self.rng.choice([1, -1])
             self.count += 1
             sys.stdout.flush()
-            return sign * self.rng.randint(1, num_cells)
+            return Leaf(sign * self.rng.randint(1, num_cells), float('nan'))
         left, right = tree
         if self.rng.random() < 0.5:
             return (self.swap_random_leaf(left, num_cells), right)
