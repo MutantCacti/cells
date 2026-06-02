@@ -52,27 +52,27 @@ Holds an array of cells and routes them.
 
 ```py
 class Sample:
-    def __init__(self, start: float y_pred: float, prev_y: float, index: int):
-    self.time = time.perf_counter()
-    self.duration = self.index # literally nanoseconds
-    ...
-    def sample(self):
-        return ( time.perf_counter() - self.time ) > self.duration
+    def __init__(self, start: int, duration: int, error: int, index: int):
+        self.start = start
+        self.duration = duration
+        self.error = error
+        self.index = index
+
+    def check(self, now: int) -> bool:
+        return now - self.start > self.duration
 ```
 
 A sample is effectively a timer and measures whether error has improved over a short window when it is compared to a CellInput.
 
 ## cellinput
 
-CellInput base class for writing to arbitrary indices. Example: 
-
-`KeyInput` which accepts any key as a non-blocking signal.
+CellInput base class for writing to arbitrary indices. For example, `KeyInput` which accepts any key as a non-blocking signal.
 
 It writes, for example, to index i of n cells.
 
 ## evolver
 
-An `Evolver` holds a number of Samples written by cells. Because each sample has an index, it can find y_pred and prev_y for a specific cell value and compare how the prediction has changed.
+An `Evolver` holds a number of Samples written by cells. Because each sample has an index, it can find past error for a specific cell value and compare how the prediction has changed.
 
 We call predicted difference in error, or change in error the *innovation* of a cell.
 

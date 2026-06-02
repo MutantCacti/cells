@@ -196,3 +196,43 @@ Confusion Matrix
 - As in a confusion matrix. Then we can get precision and recall;
 - Low precision means the cell is often wrong; it should fire less often (cc or dc should increase)
 - Low recall means the cell is right but not firing enough; it should fire more often (cc or dc should decrease)
+
+---
+
+Attention Division
+
+Fires + D > C → TP → split D
+Silent + C > D → TN → merge C
+Fires + C > D → FP → split C
+Silent + D > C → FN → merge D
+
+Each cell is (firing, honest) and honest is D-EMA < C-EMA.
+
+|.|D < C|D > C|
+|---|---|---|
+|firing|TP|FP|
+|~firing|FN|TN|
+
+Why flip? Because **dishonest negatives** are the true ones.
+
+|Value| Mutation|
+| ---  |   ---   |
+|  TP  | split D |
+|  TN  | merge C |
+|  FP  | split C |
+|  FN  | merge D |
+
+We mutate the side with the higher canopy error, split if firing else merge.
+
+---
+
+TMP
+
+- Track previous_value per cell; switch pachinko mask to - oscillation-aware.
+- Wire C↔D EMA propagation into convergence/divergence - (mask-respecting).
+- Compute (firing, honest) and the bucket per cell per tick.
+- Maintain TP/TN/FP/FN counters per cell.
+- Compute precision, recall, gap; select worst and best cell each tick.
+- Apply each cell's current-tick bucket operation.
+- Implement split and merge primitives in evolver.
+- Per-leaf trend re-targeting (slow + fast EMAs, re-target on rising trend).
