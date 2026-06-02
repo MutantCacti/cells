@@ -9,6 +9,7 @@ import sys
 import random
 from collections import deque
 from cells import Tree, Leaf, Cell, Graph
+from credit import Credit
 
 
 PRECISION = 1e-9
@@ -33,6 +34,7 @@ class Evolver:
         self.graph = graph
         self.rng = rng
         self.samples: set['Sample'] = set()
+        self.credits: dict[int, 'Credit'] = {}
 
 
     # Override
@@ -54,7 +56,10 @@ class Evolver:
         completed = {s for s in self.samples if s.check(harness.tick)}
         self.samples -= completed
 
-        # Mutate completed sample cells
+        for i, mask in harness.graph.masks.items():
+            self.credits[i].update(harness, mask)
+
+        """ # Mutate completed sample cells
         for sample in completed:
             error = harness.window_error(sample)
             cell = harness.graph.cells[sample.index]
@@ -73,7 +78,7 @@ class Evolver:
                     duration = self.prediction(error, cell),
                     error = error,
                     index = i,
-                ))
+                )) """
 
 
 

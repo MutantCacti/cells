@@ -37,13 +37,6 @@ class Cell:
         self.D: Tree = diverge      # leaves are downstream cell indices
         self.value: int = value
 
-    def replace_C(self, tree: Tree):
-        self.C = tree
-
-
-    def replace_D(self, tree: Tree):
-        self.D = tree
-
 
     @property
     def Cc(self) -> int:

@@ -57,8 +57,8 @@ class Harness:
                 start = time.perf_counter()
                 self.input.write()
                 last = self.log()
-                self.evolver.update(self)
                 self.graph.update()
+                self.evolver.update(self)
                 runtime = time.perf_counter() - start
                 time.sleep(max(1 / self.sample_rate - runtime, 0))
         finally:
